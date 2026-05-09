@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
 
   "presets": [
     {"key": "1", "id": "discord_free",        "size_mb": 10,   "codecs": ["h264"], "label": "Discord Free        -  10 MB"},
