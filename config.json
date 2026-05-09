@@ -25,9 +25,49 @@
     "h264": 45
   },
 
-  "ssim_floor": 0.87,
+  "ssim_floors": {
+    "Simple":  0.95,
+    "Medium":  0.93,
+    "Complex": 0.96
+  },
+
+  "max_cqp_by_complexity": {
+    "Simple":  35,
+    "Medium":  42,
+    "Complex": 45
+  },
+
+  "min_output_height": [
+    [1440, 1080],
+    [1080, 720],
+    [720,  540],
+    [0,    360]
+  ],
 
   "resolution_steps": [2160, 1440, 1080, 720, 540, 480, 360],
+
+  "resolution_info": {
+    "auto": "Tries your source resolution first, then drops if needed to hit the size target or quality floor.",
+    "2160": "4K - maximum pixel quality. Very large files; needs a generous size limit.",
+    "1440": "1440p - excellent quality. Large files.",
+    "1080": "1080p - great quality for most content. May need heavy compression for small targets.",
+    "720":  "720p - strong balance. For fast gameplay, often looks sharper than compressed 1080p.",
+    "540":  "540p - noticeably smaller. Good for short clips or tight size limits.",
+    "480":  "480p - small files. Acceptable for most sharing.",
+    "360":  "360p - very small files. Best for strict limits."
+  },
+
+  "encoder_info": {
+    "av1_nvenc":  {"label": "AV1  - NVIDIA GPU",  "desc": "Best compression, smallest files. Requires RTX 20xx or newer."},
+    "av1_amf":    {"label": "AV1  - AMD GPU",      "desc": "Best compression, smallest files. Requires RX 6000 series or newer."},
+    "libaom-av1": {"label": "AV1  - CPU (slow)",   "desc": "Best compression but extremely slow - a 10-min video can take hours.", "slow": true},
+    "hevc_nvenc": {"label": "H.265 - NVIDIA GPU",  "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback."},
+    "hevc_amf":   {"label": "H.265 - AMD GPU",     "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback."},
+    "libx265":    {"label": "H.265 - CPU",          "desc": "~40% smaller than H.264 at equal quality. Slower than GPU. Note: some Discord users get a download link instead of inline playback."},
+    "h264_nvenc": {"label": "H.264 - NVIDIA GPU",  "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast."},
+    "h264_amf":   {"label": "H.264 - AMD GPU",     "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast."},
+    "libx264":    {"label": "H.264 - CPU",          "desc": "Maximum compatibility. Plays everywhere including Discord inline. Slower than GPU."}
+  },
 
   "ssim_labels": [
     {"min": 0.97, "label": "Excellent - barely perceptible difference"},

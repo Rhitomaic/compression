@@ -21,7 +21,7 @@ You'll need Python 3.10 or newer. Check with `python --version`.
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-username/smartcompress.git
+git clone https://github.com/Mitzingdash/smartcompress.git
 cd smartcompress
 
 # 2. (Optional but recommended) create a virtual environment
@@ -43,45 +43,53 @@ That's it. No ffmpeg install needed - it's bundled.
 python compress.py
 ```
 
-That's it. It'll walk you through everything:
+It'll walk you through six steps:
 
-1. Drop in your file (drag & drop right into the terminal works)
-2. Pick a preset
-3. Choose a filename and output folder (or just hit Enter for the defaults)
-4. Press Enter and wait
+1. **Input file** - drag & drop right into the terminal, or paste the path
+2. **Preset** - Discord Free/Nitro, Smallest Possible, or Custom size limit
+3. **Encoder** - shows everything working on your hardware with descriptions and a recommendation
+4. **Resolution** - pick a specific output resolution, or let the tool decide automatically
+5. **Output filename** - or just hit Enter for the default
+6. **Output folder** - defaults to `out/` next to the script
 
-Output lands in an `out/` folder by default.
+Then it confirms your settings and waits for Enter before doing anything. Output lands in `out/` by default.
 
 ---
 
 ## Presets
 
-| Preset | Size Limit | Notes |
+| Preset | Size Limit | Codec default |
 |---|---|---|
-| Discord Free | 10 MB | H.264 for inline playback - H.265 opt-in available |
-| Discord Nitro Basic | 25 MB | Same as above |
-| Discord Nitro | 500 MB | Same as above |
-| Smallest Possible | No limit | Any codec, quality-first |
-| Custom | You decide | You decide |
+| Discord Free | 10 MB | H.264 |
+| Discord Nitro Basic | 25 MB | H.264 |
+| Discord Nitro | 500 MB | H.264 |
+| Smallest Possible | No limit | Best available |
+| Custom | You decide | Best available |
 
 The limit is a **ceiling, not a goal.** The tool always chases the smallest great-looking file it can produce - it won't pad a 2 MB clip to 500 MB just because Nitro allows it.
 
 ### H.265 and Discord
 
-Discord plays H.264 inline. H.265 forces a download button instead of playing in the chat - which most people won't bother clicking. So Discord presets default to H.264, but you'll be asked if you want H.265 before the encode starts. Your call every time, never a silent switch.
+Discord plays H.264 inline. H.265 forces a download button instead of playing in chat - which most people won't bother clicking. So Discord presets recommend H.264 by default, but the encoder step lets you switch to H.265 (or anything else) if you know what you're doing.
 
 ---
 
 ## What it actually does under the hood
 
+### It probes your hardware first
+
+Before you pick an encoder, it test-encodes a tiny dummy clip through every candidate on your machine. GPU encoders can be registered in ffmpeg but fail at runtime if the driver isn't cooperating (CUDA not loading, AMF not initializing, etc.). The probe catches all of that upfront - so you only see encoders that actually work.
+
+It also recommends the best one for your situation. For "Smallest Possible" it skips slow software encoders (like `libaom-av1`) and recommends the fastest GPU encoder that gives the best quality.
+
 ### It doesn't guess bitrate - it searches CQP
 
 Most tools ask "what bitrate do you want?" and you have to know the answer. SmartCompress uses **Constant Quality Parameter (CQP)** encoding instead, which means it targets a quality level rather than a fixed bitrate. Then it binary searches the CQP value until the output fits your target size.
 
-It also uses bitrate math to make a smart starting guess, so it converges in 3–5 passes instead of brute-forcing from one end:
+It uses bitrate math to make a smart starting guess, so it converges in 3-5 passes instead of brute-forcing from one end:
 
 ```
-estimated_delta = 6 * log2(source_size / target_size)
+estimated_delta = 6 * log2(source_bitrate / target_bitrate)
 ```
 
 Every +6 CQP roughly halves the file size, so this gets close on the first pass and fine-tunes from there.
@@ -91,67 +99,61 @@ Every +6 CQP roughly halves the file size, so this gets close on the first pass 
 Before encoding, it calculates a **bits-per-pixel-per-frame** score:
 
 ```
-bppf = bitrate / (width × height × fps)
+bppf = bitrate / (width x height x fps)
 ```
 
-High bppf means complex content (fast motion, film grain, lots of detail) - harder to compress without losing quality. Low bppf means clean, simple footage that squishes down easily. This shows up in the output so you know what you're working with.
+High bppf means complex content (fast motion, film grain, lots of detail) - harder to compress without losing quality. Low bppf means clean, simple footage that squishes down easily. This affects the quality floors and CQP limits used during the search.
+
+### It measures quality with SSIM
+
+Every pass is scored with **SSIM** (Structural Similarity Index) - a perceptual quality metric that compares the compressed output against the original. The comparison is resolution-normalized, so dropping to 720p doesn't fake a perfect score just because the frames are smaller.
+
+Quality floors by content type:
+
+| Content | SSIM floor |
+|---|---|
+| Simple | 0.95 |
+| Medium | 0.93 |
+| Complex (gameplay, fast motion) | 0.96 |
+
+Both the encoding pass and the SSIM check show live progress bars so you always know what's happening.
 
 ### It drops resolution if it has to
 
-If the quality score (SSIM) falls below an acceptable floor at the current resolution, it doesn't just give up or silently produce a bad file - it steps down the resolution ladder and tries again:
+If quality falls below the floor at the current resolution, it steps down the ladder and tries again rather than giving up or producing a bad file:
 
 ```
-original → 1080p → 720p → 540p → 480p → ...
+original → 1080p → 720p → 540p → 480p → 360p
 ```
 
-SSIM comparison is resolution-normalized too, so it's measuring compression quality, not just the fact that the resolution changed.
-
-### It validates encoders before using them
-
-GPU encoders can be registered in ffmpeg but fail at runtime if the driver isn't cooperating (CUDA not loading, AMF not initializing, etc.). SmartCompress test-encodes a tiny dummy clip on each candidate before committing - so it never starts a real encode only to crash halfway through.
-
-Hardware priority order:
-| Hardware | Priority |
-|---|---|
-| NVIDIA GPU (RTX 40xx) | `av1_nvenc` → `hevc_nvenc` → `h264_nvenc` |
-| AMD GPU (RX 7000+ / Radeon iGPU) | `av1_amf` → `hevc_amf` → `h264_amf` |
-| CPU fallback | `libx265` → `libx264` |
+You can also skip the auto ladder entirely and force a specific resolution in step 4. For fast-moving gameplay, locking to 720p often looks sharper than letting a heavily-compressed 1080p through.
 
 ---
 
 ## Dependencies
 
-```bash
-pip install imageio-ffmpeg Pillow vtracer
 ```
-
-ffmpeg is bundled via `imageio-ffmpeg` - no system install needed. If you have ffmpeg in PATH anyway (for ffprobe), that works too and is used automatically.
+imageio-ffmpeg   bundled ffmpeg - no system install needed
+Pillow           image processing (for future image pipeline)
+vtracer          SVG vectorization (for future image pipeline)
+```
 
 ---
 
 ## Config
 
-Everything tunable lives in `config.json` - presets, CQP defaults, max CQP per codec, SSIM thresholds. You can edit it without touching any Python.
+Everything tunable lives in `config.json` - no Python needed to adjust it.
 
 ```json
 {
-  "ssim_floor": 0.87,
-  "default_cqp": { "hevc_amf": 28, "h264_amf": 23, ... },
-  "resolution_steps": [2160, 1440, 1080, 720, 540, 480, 360]
+  "ssim_floors":          { "Simple": 0.95, "Medium": 0.93, "Complex": 0.96 },
+  "default_cqp":          { "hevc_amf": 28, "h264_amf": 23, ... },
+  "max_cqp":              { "h265": 45, "h264": 45, "av1": 55 },
+  "max_cqp_by_complexity": { "Simple": 35, "Medium": 42, "Complex": 45 },
+  "resolution_steps":     [2160, 1440, 1080, 720, 540, 480, 360],
+  "min_output_height":    [[1440, 1080], [1080, 720], [720, 540], [0, 360]]
 }
 ```
-
----
-
-## Current Stack
-
-- `imageio-ffmpeg` - bundled ffmpeg binary
-- `subprocess` - ffmpeg encoding and analysis
-- `Pillow` - image processing (installed, not yet wired up)
-- `vtracer` - SVG vectorization (installed, not yet wired up)
-- Config-driven via `config.json`
-
-A C# / Avalonia UI port is planned down the road for a proper cross-platform GUI.
 
 ---
 
@@ -159,12 +161,15 @@ A C# / Avalonia UI port is planned down the road for a proper cross-platform GUI
 
 ### Done
 - [x] Interactive CLI wizard - guided step-by-step, no flags to memorize
-- [x] CQP binary search loop - bitrate-math starting estimate, converges in ~3-5 passes
-- [x] Hardware detection + encoder validation - runtime test, not just compile-time probing
-- [x] SSIM quality scoring - resolution-normalized comparison against source
+- [x] Hardware encoder detection + runtime validation - test-encode, not just compile-time probing
+- [x] Encoder selection step - all working encoders listed with descriptions and a recommendation
+- [x] Resolution selection step - pick specific resolution or let Auto decide
+- [x] CQP binary search - bitrate-math starting estimate, converges in ~3-5 passes
+- [x] SSIM quality scoring - resolution-normalized comparison, live progress bar
+- [x] Content complexity analysis - bits-per-pixel-per-frame, affects floors and CQP limits
 - [x] Resolution ladder - auto-drops when quality floor isn't met
-- [x] Content complexity analysis - bits-per-pixel-per-frame shown before encode
-- [x] H.265 opt-in - choose at preset selection, or offered as fallback when H.264 can't hit the target
+- [x] Codec fallback - H.264 can offer H.265 if it can't hit the target
+- [x] Live progress bars - encoding and quality check both show real-time bars
 
 ### Up next
 - [ ] Image pipeline (WebP / AVIF / SVG vectorization for flat graphics)

@@ -20,14 +20,29 @@ def main() -> None:
     in_size = input_path.stat().st_size
     print(f"\n  Got: {input_path.name}  ({config.fmt_mb(in_size)})")
 
-    # ── video analysis ────────────────────────────────────────────────────────
-    print("\n  Analyzing video...", end="  ", flush=True)
+    # Analyse silently here — displayed in the confirmation screen below
     info = analysis.get_video_info(input_path)
-    print(f"{info['width']}x{info['height']}  {info['fps']}fps  {info['bitrate_kbps']} kbps")
-    print(f"  Complexity:  {info['complexity']} - {info['complexity_hint']}")
 
     wizard.divider()
     size_limit, codec_priority, preset_label = wizard.step_preset()
+
+    wizard.divider()
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    print("Probing encoders...\n")
+    working = encoder.probe_working_encoders(ffmpeg)
+    if not working:
+        print("\n[ERROR] No working encoder found on this system.")
+        sys.exit(1)
+    recommended = encoder.pick_recommended(working, codec_priority)
+
+    wizard.divider()
+    enc = wizard.step_encoder(working, recommended)
+    if not enc:
+        print("\n[ERROR] No encoder selected.")
+        sys.exit(1)
+
+    wizard.divider()
+    forced_res = wizard.step_resolution(info["height"], info["complexity"], config.resolution_steps())
 
     wizard.divider()
     out_name, out_folder = wizard.step_output(input_path)
@@ -35,51 +50,49 @@ def main() -> None:
 
     wizard.divider()
     print("Ready - here's what will happen:\n")
-    print(f"  Input:      {input_path}")
-    print(f"              {config.fmt_mb(in_size)}  |  {info['complexity']} content")
-    print(f"  Preset:     {preset_label}")
+    print(f"  Input:       {input_path.name}")
+    print(f"               {config.fmt_mb(in_size)}  |  {info['width']}x{info['height']}  {info['fps']}fps")
+    print(f"  Complexity:  {info['complexity']} - {info['complexity_hint']}")
+    print(f"  Preset:      {preset_label}")
     if size_limit:
-        print(f"  Limit:      {config.fmt_mb(size_limit)}")
-    print(f"  Output:     {output_path}")
+        print(f"  Limit:       {config.fmt_mb(size_limit)}")
+    print(f"  Encoder:     {enc}")
+    if forced_res == 0:
+        print(f"  Resolution:  Auto")
+    elif forced_res >= info["height"]:
+        print(f"  Resolution:  {info['height']}p (original)")
+    else:
+        print(f"  Resolution:  {forced_res}p (forced)")
+    print(f"  Output:      {output_path}")
     print()
     input("  Press Enter to compress, or Ctrl+C to cancel...")
-
-    # ── encoder selection ─────────────────────────────────────────────────────
-    print("\nProbing encoders...")
-    ffmpeg   = imageio_ffmpeg.get_ffmpeg_exe()
-    available = encoder.probe_encoders(ffmpeg)
-    enc      = encoder.pick_encoder(ffmpeg, codec_priority, available)
-    if not enc:
-        print("\n[ERROR] No compatible encoder found for this preset.")
-        sys.exit(1)
-    print(f"  Encoder: {enc}\n")
+    print()
 
     # ── smart compress (resolution ladder + SSIM floor) ───────────────────────
     print("Encoding...\n")
     success, ssim, scale_used = pipeline.compress_smart(
         ffmpeg, input_path, output_path,
         enc, config.default_cqp(enc), size_limit,
-        src_height=info["height"],
+        src_height=info["height"], info=info, forced_res=forced_res,
     )
 
-    # ── H.265 fallback for H.264-only paths ───────────────────────────────────
-    if not success and size_limit and codec_priority == ["h264"]:
-        print()
-        print("  H.264 could not reach the target at any resolution.")
-        print("  H.265 compresses better but may not play inline on Discord.")
-        print()
-        if input("  Switch to H.265? [y/N]: ").strip().lower() == "y":
-            enc = encoder.pick_encoder(ffmpeg, ["h265"], available)
-            if enc:
+    # ── H.265 fallback when H.264 can't hit the target ───────────────────────
+    if not success and size_limit and config.codec_family(enc) == "h264":
+        h265_enc = next((e["name"] for e in working if e["family"] == "h265"), None)
+        if h265_enc:
+            print()
+            print("  H.264 could not reach the target at any resolution.")
+            print("  H.265 compresses better but may not play inline on Discord.")
+            print()
+            if input("  Switch to H.265? [y/N]: ").strip().lower() == "y":
+                enc = h265_enc
                 print(f"\n  Encoder: {enc}\n")
                 print("Encoding...\n")
                 success, ssim, scale_used = pipeline.compress_smart(
                     ffmpeg, input_path, output_path,
                     enc, config.default_cqp(enc), size_limit,
-                    src_height=info["height"],
+                    src_height=info["height"], info=info, forced_res=forced_res,
                 )
-            else:
-                print("  [!] No H.265 encoder available.")
 
     if not success:
         if size_limit:
