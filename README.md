@@ -1,3 +1,7 @@
+# BROEN UNTILL FIXED
+Ive spend 5 FUCKING HOURS fixing this.. so imma just re-write the whole thing in like a week..
+Fuck python-
+
 # SmartCompress
 > Drag in a video, pick a target, get a compressed file. No uploads, no manual settings, no potato quality.
 

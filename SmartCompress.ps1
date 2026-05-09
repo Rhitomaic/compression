@@ -171,7 +171,8 @@ if (-not (Test-Path $VENV_DIR)) {
 
 # ── Dependencies ──────────────────────────────────────────────────────────────
 Write-Step "Checking dependencies..."
-& $PIP install -r (Join-Path $REPO_DIR "requirements.txt") --quiet --upgrade 2>$null
+& $PIP install -r (Join-Path $REPO_DIR "requirements.txt") --upgrade
+if ($LASTEXITCODE -ne 0) { Write-Err "Failed to install dependencies - see errors above." }
 Write-OK "Dependencies ready."
 Write-Host ""
 
