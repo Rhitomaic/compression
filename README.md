@@ -17,23 +17,52 @@ So I built this. You drop a file in, pick what you're compressing for (Discord, 
 
 ## Getting started
 
+### Launcher (recommended for most people)
+
+Download the launcher for your platform, place it in an empty folder, and run it. It handles everything automatically - cloning, setting up Python, installing packages, and checking for updates every time you launch.
+
+**Windows** - download [SmartCompress.ps1](SmartCompress.ps1)
+
+> **Right-click the file -> "Run with PowerShell"** - that's all.
+
+Python and Git are installed automatically if missing (via winget, which is built into Windows 10/11).
+
+If Windows says the script is blocked, run this once in PowerShell then try again:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+**Linux / macOS** - download [SmartCompress.sh](SmartCompress.sh)
+
+```bash
+chmod +x SmartCompress.sh && ./SmartCompress.sh
+```
+
+If Python or Git are missing, the script will print the exact install command for your distro.
+
+The launcher creates a `compression/` subfolder next to itself. Keep them together - that's where the repo and virtual environment live.
+
+---
+
+### Manual setup (for developers)
+
 You'll need Python 3.10 or newer. Check with `python --version`.
 
 ```bash
 # 1. Clone the repo
 git clone https://github.com/Mitzingdash/compression.git
-cd smartcompress
+cd compression
 
-# 2. (Optional but recommended) create a virtual environment
+# 2. Create a virtual environment (recommended)
 python -m venv .venv
 .venv\Scripts\activate       # Windows
-# source .venv/bin/activate  # Mac / Linux
+# source .venv/bin/activate  # Linux / macOS
 
 # 3. Install dependencies
 pip install -r requirements.txt
 ```
 
-That's it. No ffmpeg install needed - it's bundled.
+No ffmpeg install needed - it's bundled.
 
 ---
 
@@ -170,6 +199,7 @@ Everything tunable lives in `config.json` - no Python needed to adjust it.
 - [x] Resolution ladder - auto-drops when quality floor isn't met
 - [x] Codec fallback - H.264 can offer H.265 if it can't hit the target
 - [x] Live progress bars - encoding and quality check both show real-time bars
+- [x] Launcher scripts - one-file setup for Windows (PS1) and Linux/macOS (sh), auto-updates on every run
 
 ### Up next
 - [ ] Image pipeline (WebP / AVIF / SVG vectorization for flat graphics)

@@ -13,7 +13,7 @@ import wizard
 
 def main() -> None:
     print("\n" + "=" * 44)
-    print("  SmartCompress")
+    print(f"  SmartCompress  v{config.version()}")
     print("=" * 44 + "\n")
 
     input_path = wizard.step_input()

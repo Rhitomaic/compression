@@ -7,6 +7,9 @@ HERE = Path(__file__).parent
 _cfg: dict = json.loads((HERE / "config.json").read_text())
 
 
+def version() -> str:
+    return _cfg.get("version", "0.0.0")
+
 def presets() -> list[dict]:
     return _cfg["presets"]
 

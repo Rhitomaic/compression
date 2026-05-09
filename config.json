@@ -1,4 +1,6 @@
 {
+  "version": "1.1.0",
+
   "presets": [
     {"key": "1", "id": "discord_free",        "size_mb": 10,   "codecs": ["h264"], "label": "Discord Free        -  10 MB"},
     {"key": "2", "id": "discord_nitro_basic", "size_mb": 25,   "codecs": ["h264"], "label": "Discord Nitro Basic -  25 MB"},
