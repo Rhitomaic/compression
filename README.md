@@ -21,7 +21,7 @@ You'll need Python 3.10 or newer. Check with `python --version`.
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/Mitzingdash/smartcompress.git
+git clone https://github.com/Mitzingdash/compression.git
 cd smartcompress
 
 # 2. (Optional but recommended) create a virtual environment
