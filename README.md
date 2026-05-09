@@ -23,10 +23,10 @@ Download the launcher for your platform, place it in an empty folder, and run it
 
 **Windows** - download both [SmartCompress.ps1](SmartCompress.ps1) and [init.bat](init.bat) into the same empty folder.
 
-> **Double-click `init.bat`** on first run. It unblocks the PowerShell script, runs it, then deletes itself.
+> **Right-click `init.bat` → "Run as administrator"** on first run. It fixes execution policy, unblocks the PowerShell script, runs it, then deletes itself.
 > After that, just **right-click `SmartCompress.ps1` → "Run with PowerShell"** every time.
 
-Python and Git are installed automatically if missing (via winget, which is built into Windows 10/11).
+If Python or Git are missing, the launcher installs them automatically — it tries Chocolatey, then winget, then downloads the installer directly from the official source as a last resort. Admin rights (from the first run) are needed for the installer to add Python/Git to your PATH.
 
 **Linux / macOS** - download [SmartCompress.sh](SmartCompress.sh)
 
