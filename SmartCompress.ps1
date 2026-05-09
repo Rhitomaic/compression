@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 # SmartCompress launcher for Windows.
 #
 # HOW TO RUN:
@@ -145,7 +145,7 @@ $env:SC_OUT_DIR = $ROOT
 } catch {
     if ("$_" -ne "NEEDS_RESTART") {
         Write-Host ""
-        Write-Host "  Something went wrong — see the error above." -ForegroundColor Red
+        Write-Host "  Something went wrong - see the error above." -ForegroundColor Red
     }
 } finally {
     Write-Host ""
