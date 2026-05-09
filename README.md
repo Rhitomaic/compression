@@ -21,16 +21,12 @@ So I built this. You drop a file in, pick what you're compressing for (Discord, 
 
 Download the launcher for your platform, place it in an empty folder, and run it. It handles everything automatically - cloning, setting up Python, installing packages, and checking for updates every time you launch.
 
-**Windows** - download [SmartCompress.ps1](SmartCompress.ps1)
+**Windows** - download both [SmartCompress.ps1](SmartCompress.ps1) and [init.bat](init.bat) into the same empty folder.
 
-> **Right-click the file -> "Run with PowerShell"** - that's all.
+> **Double-click `init.bat`** on first run. It unblocks the PowerShell script, runs it, then deletes itself.
+> After that, just **right-click `SmartCompress.ps1` → "Run with PowerShell"** every time.
 
 Python and Git are installed automatically if missing (via winget, which is built into Windows 10/11).
-
-If Windows says the script is blocked, run this once in PowerShell then try again:
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
 
 **Linux / macOS** - download [SmartCompress.sh](SmartCompress.sh)
 

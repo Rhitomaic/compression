@@ -2,10 +2,8 @@
 # SmartCompress launcher for Windows.
 #
 # HOW TO RUN:
-#   Right-click this file -> "Run with PowerShell"
-#
-# If Windows says it's blocked, run this once in PowerShell then try again:
-#   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+#   First time: double-click init.bat  (unblocks this file, then deletes itself)
+#   After that: right-click this file -> "Run with PowerShell"
 
 $REPO_URL = "https://github.com/Mitzingdash/compression.git"
 $ROOT     = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
@@ -17,16 +15,14 @@ $PIP      = Join-Path $VENV_DIR "Scripts\pip.exe"
 function Write-OK   { param($m) Write-Host "  OK   $m" -ForegroundColor Green }
 function Write-Step { param($m) Write-Host "  ...  $m" }
 function Write-Warn { param($m) Write-Host "  [!]  $m" -ForegroundColor Yellow }
-function Write-Abort {
-    param($m)
-    Write-Host "`n  [ERROR] $m" -ForegroundColor Red
-    Read-Host "`n  Press Enter to exit"
-    exit 1
-}
+function Write-Err  { param($m) Write-Host "`n  [ERROR] $m" -ForegroundColor Red; throw $m }
+
 function Refresh-Path {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
                 [System.Environment]::GetEnvironmentVariable("Path","User")
 }
+
+try {
 
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor DarkCyan
@@ -35,8 +31,12 @@ Write-Host "  ============================================" -ForegroundColor Dar
 Write-Host ""
 
 # ── Python ────────────────────────────────────────────────────────────────────
-$PY = Get-Command python -ErrorAction SilentlyContinue
-if (-not $PY) { $PY = Get-Command python3 -ErrorAction SilentlyContinue }
+# Skip Microsoft Store stubs — they open the Store instead of running Python.
+$PY = $null
+foreach ($cmd in @("python", "python3")) {
+    $c = Get-Command $cmd -ErrorAction SilentlyContinue
+    if ($c -and $c.Source -notlike "*WindowsApps*") { $PY = $c; break }
+}
 
 if (-not $PY) {
     Write-Warn "Python not found."
@@ -46,24 +46,29 @@ if (-not $PY) {
             Write-Step "Installing Python 3.12 via winget..."
             winget install Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
             Refresh-Path
-            $PY = Get-Command python -ErrorAction SilentlyContinue
+            foreach ($cmd in @("python", "python3")) {
+                $c = Get-Command $cmd -ErrorAction SilentlyContinue
+                if ($c -and $c.Source -notlike "*WindowsApps*") { $PY = $c; break }
+            }
             if (-not $PY) {
-                Write-Warn "Installed - but PATH needs a refresh. Close this window and run the launcher again."
-                Read-Host "`n  Press Enter to exit"
-                exit 0
+                Write-Warn "Installed - PATH needs a refresh. Close this window and run again."
+                throw "NEEDS_RESTART"
             }
             Write-OK "Python installed."
         } else {
-            Write-Abort "Python 3.10+ required. Install from https://python.org (tick 'Add Python to PATH')."
+            Write-Err "Python 3.10+ required. Install from https://python.org (tick 'Add Python to PATH')."
         }
     } else {
-        Write-Abort "Python not found. Install Python 3.10+ from https://python.org (tick 'Add Python to PATH')."
+        Write-Err "Python not found. Install Python 3.10+ from https://python.org (tick 'Add Python to PATH')."
     }
 }
 
-$pyver = & $PY.Source -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>$null
+$pyver = & $PY.Source -c "import sys; print(str(sys.version_info.major) + '.' + str(sys.version_info.minor))"
+if (-not $pyver -or $pyver -notmatch '^\d+\.\d+') {
+    Write-Err "Could not read Python version. Reinstall Python from https://python.org (tick 'Add Python to PATH')."
+}
 if ([version]$pyver -lt [version]"3.10") {
-    Write-Abort "Python 3.10+ required (you have $pyver). Get it from https://python.org"
+    Write-Err "Python 3.10+ required (you have $pyver). Get a newer version from https://python.org"
 }
 Write-OK "Python $pyver"
 
@@ -77,16 +82,15 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
             winget install Git.Git --silent --accept-package-agreements --accept-source-agreements
             Refresh-Path
             if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-                Write-Warn "Installed - but PATH needs a refresh. Close this window and run the launcher again."
-                Read-Host "`n  Press Enter to exit"
-                exit 0
+                Write-Warn "Installed - PATH needs a refresh. Close this window and run again."
+                throw "NEEDS_RESTART"
             }
             Write-OK "Git installed."
         } else {
-            Write-Abort "Git required. Install from https://git-scm.com"
+            Write-Err "Git required. Install from https://git-scm.com"
         }
     } else {
-        Write-Abort "Git not found. Install from https://git-scm.com"
+        Write-Err "Git not found. Install from https://git-scm.com"
     }
 }
 Write-OK "Git"
@@ -96,7 +100,7 @@ Write-Host ""
 if (-not (Test-Path (Join-Path $REPO_DIR ".git"))) {
     Write-Step "First run - cloning SmartCompress..."
     git clone $REPO_URL $REPO_DIR --quiet
-    if ($LASTEXITCODE -ne 0) { Write-Abort "Clone failed. Check your internet connection." }
+    if ($LASTEXITCODE -ne 0) { Write-Err "Clone failed. Check your internet connection." }
     Write-OK "Cloned."
 } else {
     Write-Step "Checking for updates..."
@@ -124,7 +128,7 @@ Write-Host ""
 if (-not (Test-Path $VENV_DIR)) {
     Write-Step "Creating virtual environment..."
     & $PY.Source -m venv $VENV_DIR
-    if ($LASTEXITCODE -ne 0) { Write-Abort "Failed to create virtual environment." }
+    if ($LASTEXITCODE -ne 0) { Write-Err "Failed to create virtual environment." }
     Write-OK "Virtual environment ready."
 }
 
@@ -138,5 +142,12 @@ Write-Host ""
 $env:SC_OUT_DIR = $ROOT
 & $PYTHON (Join-Path $REPO_DIR "compress.py")
 
-Write-Host ""
-Read-Host "  Press Enter to exit"
+} catch {
+    if ("$_" -ne "NEEDS_RESTART") {
+        Write-Host ""
+        Write-Host "  Something went wrong — see the error above." -ForegroundColor Red
+    }
+} finally {
+    Write-Host ""
+    Read-Host "  Press Enter to exit"
+}
