@@ -205,3 +205,7 @@ The original Python prototype is preserved in the [`old`](https://github.com/Mit
 Made by [Mitzingdash](https://github.com/Mitzingdash) — solo project, weekend hobby scale.
 
 Made utilising AI assistance for parts of the rewrite (predictor math, refactoring, docs).
+
+## License
+
+MIT — see [LICENSE](LICENSE) for the full text.
