@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SmartCompress.CLI/SmartCompress.CLI.csproj" />
+  <Project Path="SmartCompress.Core/SmartCompress.Core.csproj" />
+</Solution>

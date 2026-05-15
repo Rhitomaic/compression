@@ -1,0 +1,84 @@
+{
+  "version": "3.0.0",
+
+  "presets": [
+    {"key": "1", "id": "discord_free",        "size_mb": 10,   "codecs": ["h264"], "label": "Discord Free        -  10 MB"},
+    {"key": "2", "id": "discord_nitro_basic", "size_mb": 25,   "codecs": ["h264"], "label": "Discord Nitro Basic -  25 MB"},
+    {"key": "3", "id": "discord_nitro",       "size_mb": 500,  "codecs": ["h264"], "label": "Discord Nitro       - 500 MB"},
+    {"key": "4", "id": "smallest",            "size_mb": null, "codecs": ["av1","h265","h264"], "label": "Smallest Possible   - no limit"},
+    {"key": "5", "id": "custom",              "size_mb": null, "codecs": ["av1","h265","h264"], "label": "Custom              - you set it"}
+  ],
+
+  "encoder_candidates": {
+    "av1":  ["av1_nvenc",  "av1_amf",  "av1_qsv",  "libsvtav1",  "libaom-av1"],
+    "h265": ["hevc_nvenc", "hevc_amf", "hevc_qsv", "libx265"],
+    "h264": ["h264_nvenc", "h264_amf", "h264_qsv", "libx264"]
+  },
+
+  "default_cqp": {
+    "av1_nvenc":  32, "av1_amf":  32, "av1_qsv":  32, "libsvtav1": 35, "libaom-av1": 32,
+    "hevc_nvenc": 28, "hevc_amf": 28, "hevc_qsv": 28, "libx265":   28,
+    "h264_nvenc": 23, "h264_amf": 23, "h264_qsv": 23, "libx264":   23
+  },
+
+  "max_cqp": {
+    "av1_nvenc":  55, "av1_amf":  55, "av1_qsv":  55, "libsvtav1": 55, "libaom-av1": 55,
+    "hevc_nvenc": 45, "hevc_amf": 45, "hevc_qsv": 45, "libx265":   45,
+    "h264_nvenc": 45, "h264_amf": 45, "h264_qsv": 45, "libx264":   45
+  },
+
+  "ssim_floors": {
+    "Simple":  0.95,
+    "Medium":  0.93,
+    "Complex": 0.96
+  },
+
+  "max_cqp_by_complexity": {
+    "Simple":  35,
+    "Medium":  42,
+    "Complex": 45
+  },
+
+  "min_output_height": [
+    [1440, 1080],
+    [1080, 720],
+    [720,  540],
+    [0,    360]
+  ],
+
+  "resolution_steps": [2160, 1440, 1080, 720, 540, 480, 360],
+
+  "resolution_info": {
+    "auto": "Tries your source resolution first, then drops if needed to hit the size target or quality floor.",
+    "2160": "4K - maximum pixel quality. Very large files; needs a generous size limit.",
+    "1440": "1440p - excellent quality. Large files.",
+    "1080": "1080p - great quality for most content. May need heavy compression for small targets.",
+    "720":  "720p - strong balance. For fast gameplay, often looks sharper than compressed 1080p.",
+    "540":  "540p - noticeably smaller. Good for short clips or tight size limits.",
+    "480":  "480p - small files. Acceptable for most sharing.",
+    "360":  "360p - very small files. Best for strict limits."
+  },
+
+  "encoder_info": {
+    "av1_nvenc":  {"label": "AV1  - NVIDIA GPU",       "desc": "Best compression, smallest files. Requires RTX 20xx or newer.",                                                          "speed": "fast"},
+    "av1_amf":    {"label": "AV1  - AMD GPU",           "desc": "Best compression, smallest files. Requires RX 6000 series or newer.",                                                    "speed": "fast"},
+    "av1_qsv":    {"label": "AV1  - Intel GPU",         "desc": "Best compression, smallest files. Requires Intel Arc or 12th-gen+ integrated graphics.",                                 "speed": "fast"},
+    "libsvtav1":  {"label": "AV1  - CPU (SVT)",         "desc": "Best compression via software. Much faster than libaom but still slower than GPU encoders.",                             "speed": "slow"},
+    "libaom-av1": {"label": "AV1  - CPU (libaom)",      "desc": "Best compression but extremely slow - a 10-min video can take hours.",                                                    "speed": "very_slow"},
+    "hevc_nvenc": {"label": "H.265 - NVIDIA GPU",       "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
+    "hevc_amf":   {"label": "H.265 - AMD GPU",          "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
+    "hevc_qsv":   {"label": "H.265 - Intel GPU",        "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
+    "libx265":    {"label": "H.265 - CPU",              "desc": "~40% smaller than H.264 at equal quality. Slower than GPU. Note: some Discord users get a download link instead of inline playback.", "speed": "slow"},
+    "h264_nvenc": {"label": "H.264 - NVIDIA GPU",       "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
+    "h264_amf":   {"label": "H.264 - AMD GPU",          "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
+    "h264_qsv":   {"label": "H.264 - Intel GPU",        "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
+    "libx264":    {"label": "H.264 - CPU",              "desc": "Maximum compatibility. Plays everywhere including Discord inline. Slower than GPU.",                                      "speed": "slow"}
+  },
+
+  "ssim_labels": [
+    {"min": 0.97, "label": "Excellent - barely perceptible difference"},
+    {"min": 0.93, "label": "Good - minor artifacts, still clean"},
+    {"min": 0.87, "label": "Acceptable - noticeable compression, readable"},
+    {"min": 0.00, "label": "Poor - significant quality loss"}
+  ]
+}
