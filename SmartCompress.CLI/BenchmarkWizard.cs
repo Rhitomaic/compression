@@ -293,12 +293,14 @@ internal static class BenchmarkWizard
         AnsiConsole.MarkupLine("[dim]Probing encoders...[/]\n");
         var working = EncoderProber.ProbeWorkingEncoders(ffmpegPath, config);
 
-        // GPU encoders all match `nvenc`, `amf`, or `qsv` in the encoder name.
+        // GPU encoders all match `nvenc`, `amf`, `vaapi`, `vulkan` or `qsv` in the encoder name.
         // CPU encoders (libx264, libx265, libsvtav1, libaom-av1) are excluded.
         return working.Where(e =>
-            e.Name.Contains("nvenc", StringComparison.OrdinalIgnoreCase) ||
-            e.Name.Contains("amf",   StringComparison.OrdinalIgnoreCase) ||
-            e.Name.Contains("qsv",   StringComparison.OrdinalIgnoreCase)
+            e.Name.Contains("nvenc",  StringComparison.OrdinalIgnoreCase) ||
+            e.Name.Contains("amf",    StringComparison.OrdinalIgnoreCase) ||
+            e.Name.Contains("qsv",    StringComparison.OrdinalIgnoreCase) ||
+            e.Name.Contains("vaapi",  StringComparison.OrdinalIgnoreCase) ||
+            e.Name.Contains("vulkan", StringComparison.OrdinalIgnoreCase)
         ).ToList();
     }
 

@@ -703,7 +703,7 @@ public static class Pipeline
         var dir  = Path.GetDirectoryName(dst) ?? ".";
         return Path.Combine(dir, $"_sc_tmp_{stem}_{cqp}.mp4");
     }
-
+    
     private static List<string> BuildEncodeArgs(
         string src, string dst, string encoder, int cqp, int? scaleHeight)
     {
@@ -720,11 +720,26 @@ public static class Pipeline
                 "-qp_i", cqp.ToString(), "-qp_p", cqp.ToString(), "-qp_b", cqp.ToString()]);
         else if (encoder.Contains("qsv"))
             args.AddRange(["-global_quality", cqp.ToString(), "-look_ahead", "1"]);
+        else if (encoder.Contains("vaapi"))
+            args.AddRange(["-rc_mode", "CQP", "-qp", cqp.ToString()]);
+        else if (encoder.Contains("vulkan"))
+            args.AddRange(["-qp", cqp.ToString()]);
         else
             args.AddRange(["-crf", cqp.ToString()]);
 
         if (scaleHeight.HasValue)
-            args.AddRange(["-vf", $"scale=-2:{scaleHeight}:flags=lanczos"]);
+        {
+            string scaleFilter = encoder.Contains("vaapi")
+                ? $"format=nv12,hwupload,scale_vaapi=-2:{scaleHeight}"
+                : encoder.Contains("vulkan")
+                    ? $"scale=-2:{scaleHeight}:flags=lanczos,format=nv12,hwupload"
+                    : $"scale=-2:{scaleHeight}:flags=lanczos";
+            args.AddRange(["-vf", scaleFilter]);
+        }
+        else if (encoder.Contains("vulkan"))
+        {
+            args.AddRange(["-vf", "format=nv12,hwupload"]);
+        }
 
         args.AddRange(["-c:a", "aac", "-b:a", "128k", dst]);
         return args;

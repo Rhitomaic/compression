@@ -10,21 +10,21 @@
   ],
 
   "encoder_candidates": {
-    "av1":  ["av1_nvenc",  "av1_amf",  "av1_qsv",  "libsvtav1",  "libaom-av1"],
-    "h265": ["hevc_nvenc", "hevc_amf", "hevc_qsv", "libx265"],
-    "h264": ["h264_nvenc", "h264_amf", "h264_qsv", "libx264"]
+    "av1":  ["av1_nvenc",  "av1_amf",  "av1_qsv", "av1_vaapi", "av1_vulkan", "libsvtav1",  "libaom-av1"],
+    "h265": ["hevc_nvenc", "hevc_amf", "hevc_qsv", "hevc_vaapi", "hevc_vulkan", "libx265"],
+    "h264": ["h264_nvenc", "h264_amf", "h264_qsv",  "h264_vaapi", "h264_vulkan", "libx264"]
   },
 
   "default_cqp": {
-    "av1_nvenc":  32, "av1_amf":  32, "av1_qsv":  32, "libsvtav1": 35, "libaom-av1": 32,
-    "hevc_nvenc": 28, "hevc_amf": 28, "hevc_qsv": 28, "libx265":   28,
-    "h264_nvenc": 23, "h264_amf": 23, "h264_qsv": 23, "libx264":   23
+    "av1_nvenc":  32, "av1_amf":  32, "av1_qsv":  32, "av1_vaapi": 34, "av1_vulkan": 34,  "libsvtav1": 35, "libaom-av1": 32,
+    "hevc_nvenc": 28, "hevc_amf": 28, "hevc_qsv": 28, "hevc_vaapi": 30, "hevc_vulkan": 30, "libx265":   28,
+    "h264_nvenc": 23, "h264_amf": 23, "h264_qsv": 23, "h264_vaapi": 24, "h264_vulkan": 24, "libx264":   23
   },
 
   "max_cqp": {
-    "av1_nvenc":  55, "av1_amf":  55, "av1_qsv":  55, "libsvtav1": 55, "libaom-av1": 55,
-    "hevc_nvenc": 45, "hevc_amf": 45, "hevc_qsv": 45, "libx265":   45,
-    "h264_nvenc": 45, "h264_amf": 45, "h264_qsv": 45, "libx264":   45
+    "av1_nvenc":  55, "av1_amf":  55, "av1_qsv":  55, "av1_vaapi": 55, "av1_vulkan": 55, "libsvtav1": 55, "libaom-av1": 55,
+    "hevc_nvenc": 45, "hevc_amf": 45, "hevc_qsv": 45, "hevc_vaapi": 45, "hevc_vulkan": 45, "libx265":   45,
+    "h264_nvenc": 45, "h264_amf": 45, "h264_qsv": 45, "h264_vaapi": 45, "h264_vulkan": 45, "libx264":   45
   },
 
   "ssim_floors": {
@@ -60,18 +60,36 @@
   },
 
   "encoder_info": {
-    "av1_nvenc":  {"label": "AV1  - NVIDIA GPU",       "desc": "Best compression, smallest files. Requires RTX 20xx or newer.",                                                          "speed": "fast"},
+    "av1_nvenc":  {"label": "AV1  - NVIDIA GPU",        "desc": "Best compression, smallest files. Requires RTX 20xx or newer.",                                                          "speed": "fast"},
     "av1_amf":    {"label": "AV1  - AMD GPU",           "desc": "Best compression, smallest files. Requires RX 6000 series or newer.",                                                    "speed": "fast"},
     "av1_qsv":    {"label": "AV1  - Intel GPU",         "desc": "Best compression, smallest files. Requires Intel Arc or 12th-gen+ integrated graphics.",                                 "speed": "fast"},
+    "av1_vaapi":  {"label": "AV1  - VAAPI",             "desc": "Linux hardware AV1 encoding via VAAPI. Usually Intel iGPU on modern Mesa drivers.",                                      "speed": "fast"},
+    "av1_vulkan": {"label": "AV1  - Vulkan",            "desc": "Experimental Vulkan AV1 hardware encoding. Requires modern FFmpeg + Vulkan video support.",                              "speed": "fast"},
     "libsvtav1":  {"label": "AV1  - CPU (SVT)",         "desc": "Best compression via software. Much faster than libaom but still slower than GPU encoders.",                             "speed": "slow"},
     "libaom-av1": {"label": "AV1  - CPU (libaom)",      "desc": "Best compression but extremely slow - a 10-min video can take hours.",                                                    "speed": "very_slow"},
     "hevc_nvenc": {"label": "H.265 - NVIDIA GPU",       "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
     "hevc_amf":   {"label": "H.265 - AMD GPU",          "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
     "hevc_qsv":   {"label": "H.265 - Intel GPU",        "desc": "~40% smaller than H.264 at equal quality. Fast. Note: some Discord users get a download link instead of inline playback.", "speed": "fast"},
+    "hevc_vaapi": {
+      "label": "H.265 - VAAPI",
+      "desc": "Linux hardware H.265 encoding via VAAPI. Fast and efficient on Intel/AMD Mesa drivers.",
+      "speed": "fast"
+    },
+    "hevc_vulkan": {
+      "label": "H.265 - Vulkan",
+      "desc": "Experimental Vulkan H.265 encoding. Requires Vulkan video encode support.",
+      "speed": "fast"
+    },
     "libx265":    {"label": "H.265 - CPU",              "desc": "~40% smaller than H.264 at equal quality. Slower than GPU. Note: some Discord users get a download link instead of inline playback.", "speed": "slow"},
     "h264_nvenc": {"label": "H.264 - NVIDIA GPU",       "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
     "h264_amf":   {"label": "H.264 - AMD GPU",          "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
     "h264_qsv":   {"label": "H.264 - Intel GPU",        "desc": "Maximum compatibility. Plays everywhere including Discord inline. Fast.",                                                 "speed": "fast"},
+    "h264_vaapi": {"label": "H.264 - VAAPI",            "desc": "Linux hardware H.264 encoding via VAAPI. Broad Linux support and very fast.",                                             "speed": "fast"},
+    "h264_vulkan": {
+      "label": "H.264 - Vulkan",
+      "desc": "Experimental Vulkan H.264 encoding. Requires modern Vulkan drivers and FFmpeg.",
+      "speed": "fast"
+    },
     "libx264":    {"label": "H.264 - CPU",              "desc": "Maximum compatibility. Plays everywhere including Discord inline. Slower than GPU.",                                      "speed": "slow"}
   },
 

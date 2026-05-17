@@ -18,17 +18,33 @@ public static class EncoderProber
         return found;
     }
 
-    public static bool TestEncoder(string ffmpegPath, string encoder)
+    private static bool TestEncoder(string ffmpegPath, string encoder)
     {
-        var psi = BuildPsi(ffmpegPath,
-        [
+        var isVaapi  = encoder.Contains("vaapi");
+        var isVulkan = encoder.Contains("vulkan");
+        var isHw     = isVaapi || isVulkan;
+
+        var baseArgs = new List<string>
+        {
             "-y", "-f", "lavfi",
             "-i", "color=black:size=256x144:rate=30:duration=0.5",
-            "-pix_fmt", "yuv420p", "-c:v", encoder, "-f", "null", "-"
-        ]);
+        };
+
+        if (isVaapi)
+            baseArgs.AddRange(["-init_hw_device", "vaapi=va:/dev/dri/renderD128", "-filter_hw_device", "va"]);
+        else if (isVulkan)
+            baseArgs.AddRange(["-init_hw_device", "vulkan=vk:0", "-filter_hw_device", "vk"]);
+
+        if (isHw)
+            baseArgs.AddRange(["-vf", "format=nv12,hwupload"]);
+        else
+            baseArgs.AddRange(["-pix_fmt", "yuv420p"]);
+
+        baseArgs.AddRange(["-c:v", encoder, "-f", "null", "-"]);
+
+        var psi = BuildPsi(ffmpegPath, baseArgs.ToArray());
         using var proc = Process.Start(psi)!;
         var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-        proc.StandardError.ReadToEnd();
         proc.WaitForExit();
         stdoutTask.Wait();
         return proc.ExitCode == 0;

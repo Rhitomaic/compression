@@ -12,10 +12,16 @@ Console.InputEncoding  = System.Text.Encoding.UTF8;
 var ffmpegDir = AppPaths.FfmpegDir;
 Directory.CreateDirectory(ffmpegDir);
 
-var ffmpegOptions = new FFOptions { BinaryFolder = ffmpegDir, TemporaryFilesFolder = Path.GetTempPath() };
+var ffmpegExe = FfmpegLocator.GetFfmpegPath();
+
+var ffmpegOptions = new FFOptions
+{
+    BinaryFolder = Path.GetDirectoryName(ffmpegExe)!,
+    TemporaryFilesFolder = Path.GetTempPath()
+};
+
 GlobalFFOptions.Configure(ffmpegOptions);
 
-var ffmpegExe = Path.Combine(ffmpegDir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
 if (!File.Exists(ffmpegExe))
 {
     AnsiConsole.MarkupLine("[cyan]FFmpeg not found.[/] Downloading [dim](one-time setup, ~75 MB)...[/]");
